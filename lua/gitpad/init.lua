@@ -1,16 +1,17 @@
 local M = {}
+local H = {}
 local uv = vim.uv or vim.loop
 local gitpad_win_id = nil
 
 M.config = {
   border = 'single',
-  dir = vim.fn.stdpath('data') .. '/gitpad',
+  dir = vim.fs.normalize(vim.fn.stdpath('data') .. '/gitpad'),
   style = '',
   default_text = nil,
   on_attach = nil,
 }
 
-local function is_git_dir()
+function H.is_git_dir()
   if vim.fn.system('git rev-parse --is-inside-work-tree 2>/dev/null') ~= '' then
     return true
   end
@@ -24,17 +25,34 @@ local function is_git_dir()
   return false
 end
 
-function M.init_gitpad_file(params)
-  local is_branch = params.is_branch or false
+function H.get_branch_filename()
+  -- local branch_name = vim.fn.systemlist('basename `git rev-parse --abbrev-ref HEAD`')[1]
+  local branch_name = vim.fn.systemlist('git branch --show-current')[1]
+  return H.clean_filename(branch_name)
+end
+
+function H.clean_filename(filename)
+  if filename == nil then
+    return nil
+  end
+
+  -- remove any spaces in the branch name and replace with a hyphen
+  -- replace any forward slashes with a colon so that the file is not created in a subdirectory
+  filename = filename:gsub('%s+', '-'):gsub('/', ':')
+  return filename
+end
+
+function M.init_gitpad_file(opts)
+  local clean_name = H.clean_filename(opts.filename) or nil
 
   -- get the git repository name of the current directory
-  if not is_git_dir() then
+  if not H.is_git_dir() then
     return
   end
 
   -- create the repository directory if it doesn't exist
   local repository_name = vim.fn.systemlist('basename `git rev-parse --show-toplevel`')[1]
-  local notes_dir = vim.fs.normalize(M.config.dir) .. '/' .. repository_name
+  local notes_dir = vim.fs.normalize(M.config.dir .. '/' .. repository_name)
 
   -- create the notes directory if it doesn't exist
   if not uv.fs_stat(notes_dir) then
@@ -44,18 +62,15 @@ function M.init_gitpad_file(params)
   local gitpad_file_path
   local gitpad_default_text
 
-  if is_branch then
-    -- local branch_name = vim.fn.systemlist('basename `git rev-parse --abbrev-ref HEAD`')[1]
-    local branch_name = vim.fn.systemlist('git branch --show-current')[1]
+  if clean_name ~= nil then
+    gitpad_default_text = '# ' .. clean_name .. ' \n\nThis is your new gitpad file.\n'
 
-    -- remove any spaces in the branch name and replace with a hyphen
-    local filename = branch_name:gsub('%s+', '-')
+    if clean_name == H.get_branch_filename() then
+      clean_name = clean_name .. '-branchpad.md'
+      gitpad_default_text = '# ' .. clean_name .. ' Branchpad\n\nThis is your gitpad branch file.\n'
+    end
 
-    -- replace any forward slashes with a colon so that the file is not created in a subdirectory
-    filename = branch_name:gsub('/', ':')
-
-    gitpad_file_path = notes_dir .. '/' .. vim.fn.fnameescape(filename) .. '-branchpad.md'
-    gitpad_default_text = '# ' .. branch_name .. ' Branchpad\n\nThis is your Gitpad Branch file.\n'
+    gitpad_file_path = notes_dir .. '/' .. vim.fn.fnameescape(clean_name)
   else
     gitpad_file_path = notes_dir .. '/gitpad.md'
     gitpad_default_text = '# Gitpad\n\nThis is your Gitpad file.\n'
@@ -84,7 +99,7 @@ function M.init_gitpad_file(params)
   return gitpad_file_path
 end
 
-function M.close_window(params)
+function M.close_window(opts)
   local wininfo = vim.fn.getwininfo(gitpad_win_id)
 
   -- We might have closed the window not via this method so we need to
@@ -99,7 +114,7 @@ function M.close_window(params)
 
   -- Just ensure that we are closing the correct window
   -- This is just to prevent closing a gitpad project window or gitpad branch window
-  if bufname == params.path then
+  if bufname == opts.path then
     vim.api.nvim_win_close(gitpad_win_id, true)
     gitpad_win_id = nil
     return true
@@ -108,13 +123,9 @@ function M.close_window(params)
   return false
 end
 
-function M.open_window(params)
-  local path = params.path
-  local is_branch = params.is_branch or false
+function M.open_window(opts)
+  local path = opts.path
   local title = ' gitpad '
-  if is_branch then
-    title = ' gitpad:branch '
-  end
 
   local ui = vim.api.nvim_list_uis()[1]
   local width = math.floor((ui.width * 0.5) + 0.5)
@@ -171,21 +182,20 @@ function M.open_window(params)
   end
 end
 
-function M.toggle_window(params)
-  if not M.close_window(params) then
-    M.open_window(params)
+function M.toggle_window(opts)
+  if not M.close_window(opts) then
+    M.open_window(opts)
   end
 end
 
 function M.toggle_gitpad(opts)
   opts = opts or {}
-  opts.is_branch = opts.is_branch or false
-  local path = M.init_gitpad_file { is_branch = opts.is_branch }
-  M.toggle_window { is_branch = opts.is_branch, path = path }
+  local path = M.init_gitpad_file(opts)
+  M.toggle_window { path = path }
 end
 
 function M.toggle_gitpad_branch()
-  M.toggle_gitpad { is_branch = true }
+  M.toggle_gitpad { filename = H.get_branch_filename() }
 end
 
 M.setup = function(opts)
