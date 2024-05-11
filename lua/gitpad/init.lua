@@ -1,9 +1,12 @@
 local M = {}
+local uv = vim.uv or vim.loop
+local gitpad_win_id = nil
 
 M.config = {
   border = 'single',
   dir = vim.fn.stdpath('data') .. '/gitpad',
   style = '',
+  default_text = nil,
   on_attach = nil,
 }
 
@@ -34,25 +37,33 @@ function M.init_gitpad_file(params)
   local notes_dir = vim.fs.normalize(M.config.dir) .. '/' .. repository_name
 
   -- create the notes directory if it doesn't exist
-  if vim.fn.isdirectory(notes_dir) == 0 then
-    vim.fn.mkdir(notes_dir, 'p')
+  if not uv.fs_stat(notes_dir) then
+    uv.fs_mkdir(notes_dir, 493)
   end
 
   local gitpad_file_path
   local gitpad_default_text
 
   if is_branch then
-    local branch_name = vim.fn.systemlist('basename `git rev-parse --abbrev-ref HEAD`')[1]
-    gitpad_file_path = notes_dir .. '/' .. branch_name .. '-branchpad.md'
-    gitpad_default_text = '# Branchpad\n\nThis is your Gitpad Branch file.\n'
+    -- local branch_name = vim.fn.systemlist('basename `git rev-parse --abbrev-ref HEAD`')[1]
+    local branch_name = vim.fn.systemlist('git branch --show-current')[1]
+
+    -- remove any spaces in the branch name and replace with a hyphen
+    local filename = branch_name:gsub('%s+', '-')
+
+    -- replace any forward slashes with a colon so that the file is not created in a subdirectory
+    filename = branch_name:gsub('/', ':')
+
+    gitpad_file_path = notes_dir .. '/' .. vim.fn.fnameescape(filename) .. '-branchpad.md'
+    gitpad_default_text = '# ' .. branch_name .. ' Branchpad\n\nThis is your Gitpad Branch file.\n'
   else
     gitpad_file_path = notes_dir .. '/gitpad.md'
     gitpad_default_text = '# Gitpad\n\nThis is your Gitpad file.\n'
   end
 
   -- create the gitpad.md file if it doesn't exist
-  if vim.fn.filereadable(gitpad_file_path) == 0 then
-    local fd = vim.loop.fs_open(gitpad_file_path, 'w', 438)
+  if not uv.fs_stat(gitpad_file_path) then
+    local fd = uv.fs_open(gitpad_file_path, 'w', 438)
     if fd == nil then
       vim.api.nvim_echo({
         {
@@ -60,41 +71,49 @@ function M.init_gitpad_file(params)
           'WarningMsg',
         },
       }, true, {})
-
       return
     end
-    vim.loop.fs_write(fd, gitpad_default_text)
-    vim.loop.fs_close(fd)
+
+    -- write the default text to the file
+    if M.config.default_text == nil then
+      uv.fs_write(fd, gitpad_default_text)
+    end
+    uv.fs_close(fd)
   end
 
   return gitpad_file_path
 end
 
-function M.toggle_window(params)
-  local path = params.path
+function M.close_window(params)
+  local wininfo = vim.fn.getwininfo(gitpad_win_id)
 
-  if path == nil then
-    return
+  -- We might have closed the window not via this method so we need to
+  -- check if the window id is still valid via `getwininfo`
+  if gitpad_win_id == nil or vim.tbl_isempty(wininfo) then
+    gitpad_win_id = nil
+    return false
   end
 
+  local bufnr = vim.api.nvim_win_get_buf(gitpad_win_id)
+  local bufname = vim.api.nvim_buf_get_name(bufnr)
+
+  -- Just ensure that we are closing the correct window
+  -- This is just to prevent closing a gitpad project window or gitpad branch window
+  if bufname == params.path then
+    vim.api.nvim_win_close(gitpad_win_id, true)
+    gitpad_win_id = nil
+    return true
+  end
+
+  return false
+end
+
+function M.open_window(params)
+  local path = params.path
   local is_branch = params.is_branch or false
   local title = ' gitpad '
   if is_branch then
     title = ' gitpad:branch '
-  end
-
-  local bufinfo = vim.fn.getbufinfo(path)
-  local open_bufnr = nil
-
-  if not vim.tbl_isempty(bufinfo) then
-    local windows = bufinfo[1].windows
-    open_bufnr = bufinfo[1].bufnr
-
-    -- If the buffer is attached to a window, then just hide that window
-    if not vim.tbl_isempty(windows) then
-      vim.api.nvim_win_hide(windows[1])
-      return
-    end
   end
 
   local ui = vim.api.nvim_list_uis()[1]
@@ -116,50 +135,57 @@ function M.toggle_window(params)
     win_opts.title_pos = 'left'
   end
 
-  -- if there is an exisitng buffer for the current file being toggled
-  -- then just open that
-  if open_bufnr ~= nil then
-    vim.api.nvim_open_win(open_bufnr, true, win_opts)
-    return
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  if gitpad_win_id == nil then
+    gitpad_win_id = vim.api.nvim_open_win(bufnr, true, win_opts)
   end
 
-  open_bufnr = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(open_bufnr, 'filetype', 'markdown')
-
-  local win_id = vim.api.nvim_open_win(open_bufnr, true, win_opts)
-
-  vim.cmd.highlight('NormalFloat guibg=NONE guifg=NONE')
   vim.cmd.edit(path)
-  vim.cmd.autocmd('BufLeave gitpad.md,gitpad*.md silent! wall')
+
+  vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
+  vim.api.nvim_set_option_value('buflisted', false, { buf = bufnr })
+
+  vim.api.nvim_set_option_value(
+    'winhighlight',
+    'Normal:GitpadFloat,FloatBorder:GitpadFloatBorder,FloatTitle:GitpadFloatTitle',
+    { win = gitpad_win_id }
+  )
 
   -- These are all the options being set when style = minimal
   -- But what's kinda annoying is the fact that using is would then
   -- set the `signcolumn` to be `auto` which is not what I want most of the time
   -- So let's just set all minimal options except signcolumn to be no
   if M.config.style == '' then
-    vim.api.nvim_win_set_option(win_id, 'number', false)
-    vim.api.nvim_win_set_option(win_id, 'relativenumber', false)
-    vim.api.nvim_win_set_option(win_id, 'cursorline', false)
-    vim.api.nvim_win_set_option(win_id, 'cursorcolumn', false)
-    vim.api.nvim_win_set_option(win_id, 'foldcolumn', '0')
-    vim.api.nvim_win_set_option(win_id, 'statuscolumn', '')
-    vim.api.nvim_win_set_option(win_id, 'signcolumn', 'no')
-    vim.api.nvim_win_set_option(win_id, 'colorcolumn', '')
+    vim.api.nvim_set_option_value('number', false, { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('relativenumber', false, { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('cursorline', false, { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('cursorcolumn', false, { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('foldcolumn', '0', { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('statuscolumn', '', { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('signcolumn', 'no', { win = gitpad_win_id })
+    vim.api.nvim_set_option_value('colorcolumn', '', { win = gitpad_win_id })
   end
 
   if M.config.on_attach ~= nil then
-    M.config.on_attach()
+    M.config.on_attach(vim.api.nvim_win_get_buf(gitpad_win_id))
   end
 end
 
-function M.toggle_git_pad()
-  local path = M.init_gitpad_file {}
-  M.toggle_window { is_branch = false, path = path }
+function M.toggle_window(params)
+  if not M.close_window(params) then
+    M.open_window(params)
+  end
 end
 
-function M.toggle_git_pad_branch()
-  local path = M.init_gitpad_file { is_branch = true }
-  M.toggle_window { is_branch = true, path = path }
+function M.toggle_gitpad(opts)
+  opts = opts or {}
+  opts.is_branch = opts.is_branch or false
+  local path = M.init_gitpad_file { is_branch = opts.is_branch }
+  M.toggle_window { is_branch = opts.is_branch, path = path }
+end
+
+function M.toggle_gitpad_branch()
+  M.toggle_gitpad { is_branch = true }
 end
 
 M.setup = function(opts)

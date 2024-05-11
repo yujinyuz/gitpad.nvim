@@ -40,10 +40,10 @@ gitpad comes with the following defaults:
   border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).
   style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See :help nvim_open_win() '), and `''` (default Neovim style).
   dir = vim.fn.stdpath('data') .. '/gitpad', -- The directory where the notes are stored. Possible value is a valid path ie '~/notes'
-  on_attach = function()
+  on_attach = function(bufnr)
     -- You can also define a function to be called when the gitpad window is opened, by setting the `on_attach` option:
     -- This is just an example
-    vim.api.nvim_buf_set_keymap(0, 'n', 'q', '<Cmd>wq<CR>', { noremap = true, silent = true })
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'q', '<Cmd>wq<CR>', { noremap = true, silent = true })
   end,
 }
 ```
@@ -55,9 +55,9 @@ gitpad comes with the following defaults:
 The plugin provides the following methods that you can use to open gitpad or the gitpad branch
 
 ```lua
-require('gitpad').toggle_git_pad()
+require('gitpad').toggle_gitpad()
 -- OR
-require('gitpad').toggle_git_pad_branch()
+require('gitpad').toggle_gitpad_branch()
 ```
 
 ## License
