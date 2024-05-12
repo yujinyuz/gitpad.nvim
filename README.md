@@ -5,13 +5,15 @@ A minimal neovim plugin for taking down notes for git projects and per branch
 ![gitpad.nvim screenshot](https://github.com/yujinyuz/gitpad.nvim/assets/10972027/516838f5-9e14-4177-9abc-6f71a4b7feac)
 
 ## ✨ Features
+
 - Provides a per repository / per branch way of note taking while working on your code with the help
-of floating windows.
+  of floating windows.
 - Supports creating and toggling a separate `{branch}-branchpad.md` file for each branch,
   if desired.
 - Extensible note list (daily notes, per-file notes, etc.)
 
 ## ⚡️ Requirements
+
 - Neovim >= 0.7.2
 
 Disclaimer: Plugin should work fine with most neovim versions but I have not tested yet
@@ -25,11 +27,12 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
 {
   'yujinyuz/gitpad.nvim',
   config = function()
-    require('gitpad').setup {
+    require('gitpad').setup({
       -- your configuration comes here
       -- or leave it empty to use the default settings
       -- refer to the configuration section below
-  },
+    })
+  end,
   keys = {
     {
       '<leader>pp',
@@ -50,7 +53,7 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
       '<leader>pd',
       function()
         local date_filename = 'daily-' .. os.date('%Y-%m-%d.md')
-        require('gitpad').toggle_gitpad { filename = date_filename }
+        require('gitpad').toggle_gitpad({ filename = date_filename })
       end,
       desc = 'gitpad daily notes',
     },
@@ -64,13 +67,13 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
           return
         end
         filename = vim.fn.pathshorten(filename, 2) .. '.md'
-        require('gitpad').toggle_gitpad { filename = filename }
+        require('gitpad').toggle_gitpad({ filename = filename })
       end,
       desc = 'gitpad per file notes',
     },
   },
-  end
 }
+
 ```
 
 ## ⚙︎ Configuration
@@ -106,4 +109,5 @@ require('gitpad').toggle_gitpad_branch()
 ```
 
 ## License
+
 This plugin is distributed under the terms of the MIT License.
