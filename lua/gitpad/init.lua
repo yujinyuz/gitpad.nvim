@@ -51,7 +51,7 @@ function M.init_gitpad_file(opts)
   end
 
   -- create the repository directory if it doesn't exist
-  local repository_name = vim.fn.systemlist('basename `git rev-parse --show-toplevel`')[1]
+  local repository_name = vim.fn.systemlist("bash -c 'basename `git rev-parse --show-toplevel`'")[1]
   local notes_dir = vim.fs.normalize(M.config.dir .. '/' .. repository_name)
 
   -- create the notes directory if it doesn't exist
