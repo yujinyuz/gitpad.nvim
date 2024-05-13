@@ -56,7 +56,7 @@ function M.init_gitpad_file(opts)
 
   -- create the notes directory if it doesn't exist
   if not uv.fs_stat(notes_dir) then
-    uv.fs_mkdir(notes_dir, 493)
+    vim.fn.mkdir(notes_dir, 'p')
   end
 
   local gitpad_file_path
