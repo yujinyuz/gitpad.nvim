@@ -190,10 +190,10 @@ function M.toggle_window(opts)
 end
 
 function M.toggle_gitpad(opts)
-  local path = M.init_gitpad_file(opts or {})
-  opts = vim.tbl_deep_extend('force', opts, { path = path })
+  opts = opts or {}
+  local path = M.init_gitpad_file(opts)
 
-  M.toggle_window(opts)
+  M.toggle_window(vim.tbl_deep_extend('force', opts, { path = path }))
 end
 
 function M.toggle_gitpad_branch(opts)
