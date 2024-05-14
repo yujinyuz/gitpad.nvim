@@ -37,14 +37,14 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
     {
       '<leader>pp',
       function()
-        require('gitpad').toggle_gitpad()
+        require('gitpad').toggle_gitpad() -- or require('gitpad').toggle_gitpad({ title = 'Project notes' })
       end,
       desc = 'gitpad project',
     },
     {
       '<leader>pb',
       function()
-        require('gitpad').toggle_gitpad_branch()
+        require('gitpad').toggle_gitpad_branch() -- or require('gitpad').toggle_gitpad_branch({ title = 'Branch notes' })
       end,
       desc = 'gitpad branch',
     },
@@ -53,7 +53,7 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
       '<leader>pd',
       function()
         local date_filename = 'daily-' .. os.date('%Y-%m-%d.md')
-        require('gitpad').toggle_gitpad({ filename = date_filename })
+        require('gitpad').toggle_gitpad({ filename = date_filename }) -- or require('gitpad').toggle_gitpad({ filename = date_filename, title = 'Daily notes' })
       end,
       desc = 'gitpad daily notes',
     },
@@ -67,7 +67,7 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
           return
         end
         filename = vim.fn.pathshorten(filename, 2) .. '.md'
-        require('gitpad').toggle_gitpad({ filename = filename })
+        require('gitpad').toggle_gitpad({ filename = filename }) -- or require('gitpad').toggle_gitpad({ filename = filename, title = 'Current file notes' })
       end,
       desc = 'gitpad per file notes',
     },
@@ -84,6 +84,7 @@ gitpad.nvim comes with the following defaults:
 
 ```lua
 {
+  title = 'gitpad', -- The title of the floating window
   border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).
   style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See :help nvim_open_win() '), and `''` (default Neovim style).
   dir = vim.fn.stdpath('data') .. '/gitpad', -- The directory where the notes are stored. Possible value is a valid path ie '~/notes'

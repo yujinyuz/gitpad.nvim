@@ -4,6 +4,7 @@ local uv = vim.uv or vim.loop
 local gitpad_win_id = nil
 
 M.config = {
+  title = 'gitpad',
   border = 'single',
   dir = vim.fs.normalize(vim.fn.stdpath('data') .. '/gitpad'),
   style = '',
@@ -125,7 +126,7 @@ end
 
 function M.open_window(opts)
   local path = opts.path
-  local title = ' gitpad '
+  local title = opts.title or M.config.title
 
   local ui = vim.api.nvim_list_uis()[1]
   local width = math.floor((ui.width * 0.5) + 0.5)
@@ -142,7 +143,7 @@ function M.open_window(opts)
   }
 
   if vim.fn.has('nvim-0.9.0') == 1 then
-    win_opts.title = title
+    win_opts.title = ' ' .. title .. ' '
     win_opts.title_pos = 'left'
   end
 
@@ -191,11 +192,13 @@ end
 function M.toggle_gitpad(opts)
   opts = opts or {}
   local path = M.init_gitpad_file(opts)
-  M.toggle_window { path = path }
+
+  M.toggle_window(vim.tbl_deep_extend('force', opts, { path = path }))
 end
 
-function M.toggle_gitpad_branch()
-  M.toggle_gitpad { filename = H.get_branch_filename() }
+function M.toggle_gitpad_branch(opts)
+  opts = vim.tbl_deep_extend('force', opts or {}, { filename = H.get_branch_filename() })
+  M.toggle_gitpad(opts)
 end
 
 M.setup = function(opts)
