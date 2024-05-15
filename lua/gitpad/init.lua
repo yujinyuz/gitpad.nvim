@@ -147,12 +147,10 @@ function M.open_window(opts)
     win_opts.title_pos = 'left'
   end
 
-  local bufnr = vim.api.nvim_create_buf(false, true)
+  local bufnr = vim.fn.bufadd(path)
   if gitpad_win_id == nil then
     gitpad_win_id = vim.api.nvim_open_win(bufnr, true, win_opts)
   end
-
-  vim.cmd.edit(path)
 
   vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
   vim.api.nvim_set_option_value('buflisted', false, { buf = bufnr })
