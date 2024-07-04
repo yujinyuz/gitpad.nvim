@@ -7,7 +7,7 @@ A minimal neovim plugin for taking down notes for git projects and per branch
 ## ✨ Features
 
 - Provides a per repository / per branch way of note taking while working on your code with the help
-  of floating windows.
+  of standard or floating windows.
 - Supports creating and toggling a separate `{branch}-branchpad.md` file for each branch,
   if desired.
 - Extensible note list (daily notes, per-file notes, etc.)
@@ -48,6 +48,14 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
       end,
       desc = 'gitpad branch',
     },
+    {
+      "<leader>pbv",
+      function()
+        require("gitpad").toggle_gitpad_branch({ window_type = "split", split_win_opts = { split = "right" } })
+      end,
+      desc = "gitpad branch vertical split",
+    },
+
     -- Daily notes
     {
       '<leader>pd',
@@ -85,8 +93,6 @@ gitpad.nvim comes with the following defaults:
 ```lua
 {
   title = 'gitpad', -- The title of the floating window
-  border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).
-  style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See :help nvim_open_win() '), and `''` (default Neovim style).
   dir = vim.fn.stdpath('data') .. '/gitpad', -- The directory where the notes are stored. Possible value is a valid path ie '~/notes'
   default_text = nil, -- Leave this nil if you want to use the default text
   on_attach = function(bufnr)
@@ -94,6 +100,16 @@ gitpad.nvim comes with the following defaults:
     -- This is just an example
     vim.api.nvim_buf_set_keymap(bufnr, 'n', 'q', '<Cmd>wq<CR>', { noremap = true, silent = true })
   end,
+  window_type = 'floating', -- Options are 'floating' or 'split'
+  floating_win_opts = {
+    relative = 'editor', -- where the floating window should appear. See :help nvim_open_win()
+    style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See :help nvim_open_win() '), and `''` (default Neovim style).
+    border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).
+    focusable = false, -- Enables focus by user actions. See :help nvim_open_win()
+  },
+  split_win_opts = {
+    split = 'right', -- Controls split direction if window_type == 'split'. Options are 'left', 'right', 'above', or 'below'. See :help nvim_open_win()
+  },
 }
 ```
 
