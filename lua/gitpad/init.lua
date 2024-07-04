@@ -5,11 +5,19 @@ local gitpad_win_id = nil
 
 M.config = {
   title = 'gitpad',
-  border = 'single',
   dir = vim.fs.normalize(vim.fn.stdpath('data') .. '/gitpad'),
-  style = '',
   default_text = nil,
   on_attach = nil,
+  window_type = 'floating', -- options: floating, split
+  floating_win_opts = {
+    relative = 'editor',
+    style = '',
+    border = 'single',
+    focusable = false,
+  },
+  split_win_opts = {
+    split = 'right',
+  },
 }
 
 function H.is_git_dir()
@@ -132,18 +140,31 @@ function M.open_window(opts)
   local ui = vim.api.nvim_list_uis()[1]
   local width = math.floor((ui.width * 0.5) + 0.5)
   local height = math.floor((ui.height * 0.5) + 0.5)
-  local win_opts = {
-    relative = 'editor',
-    width = width,
-    height = height,
-    col = (ui.width - width) / 2,
-    row = (ui.height - height) / 2,
-    style = M.config.style,
-    border = M.config.border,
-    focusable = false,
+
+  -- Use this table for supporting more built-in window configurations
+  local switch_table = {
+    ['floating'] = function()
+      local default_float_win_opts = {
+        width = width,
+        height = height,
+        col = (ui.width - width) / 2,
+        row = (ui.height - height) / 2,
+      }
+      default_float_win_opts = vim.tbl_deep_extend('force', default_float_win_opts, M.config.floating_win_opts)
+      return default_float_win_opts
+    end,
+
+    ['split'] = function(_)
+      return M.config.split_win_opts
+    end,
   }
 
-  if vim.fn.has('nvim-0.9.0') == 1 then
+  -- default to floating window
+  local win_opts = switch_table['floating']()
+  if switch_table[M.config.window_type] then
+    win_opts = switch_table[M.config.window_type]()
+  end
+  if win_opts['relative'] and vim.fn.has('nvim-0.9.0') == 1 then
     win_opts.title = ' ' .. title .. ' '
     win_opts.title_pos = 'left'
   end
@@ -156,11 +177,13 @@ function M.open_window(opts)
   vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
   vim.api.nvim_set_option_value('buflisted', false, { buf = bufnr })
 
-  vim.api.nvim_set_option_value(
-    'winhighlight',
-    'Normal:GitpadFloat,FloatBorder:GitpadFloatBorder,FloatTitle:GitpadFloatTitle',
-    { win = gitpad_win_id }
-  )
+  if win_opts['relative'] then
+    vim.api.nvim_set_option_value(
+      'winhighlight',
+      'Normal:GitpadFloat,FloatBorder:GitpadFloatBorder,FloatTitle:GitpadFloatTitle',
+      { win = gitpad_win_id }
+    )
+  end
 
   -- These are all the options being set when style = minimal
   -- But what's kinda annoying is the fact that using is would then
