@@ -136,6 +136,7 @@ end
 function M.open_window(opts)
   local path = opts.path
   local title = opts.title or M.config.title
+  local window_type = opts.window_type or M.config.window_type
 
   local ui = vim.api.nvim_list_uis()[1]
   local width = math.floor((ui.width * 0.5) + 0.5)
@@ -154,16 +155,17 @@ function M.open_window(opts)
       return vim.tbl_deep_extend('force', default_float_win_opts, opts.floating_win_opts or {})
     end,
 
-    ['split'] = function(_)
+    ['split'] = function()
       return vim.tbl_deep_extend('force', M.config.split_win_opts, opts.split_win_opts or {})
     end,
   }
 
   -- default to floating window
   local win_opts = switch_table['floating']()
-  if switch_table[opts.window_type or M.config.window_type] then
-    win_opts = switch_table[M.config.window_type]()
+  if switch_table[window_type] then
+    win_opts = switch_table[window_type]()
   end
+
   if win_opts['relative'] and vim.fn.has('nvim-0.9.0') == 1 then
     win_opts.title = ' ' .. title .. ' '
     win_opts.title_pos = 'left'
