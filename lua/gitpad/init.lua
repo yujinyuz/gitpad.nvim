@@ -151,8 +151,12 @@ function M.open_window(opts)
         col = (ui.width - width) / 2,
         row = (ui.height - height) / 2,
       }
-      default_float_win_opts = vim.tbl_deep_extend('force', default_float_win_opts, M.config.floating_win_opts)
-      return vim.tbl_deep_extend('force', default_float_win_opts, opts.floating_win_opts or {})
+      local float_win_opts = vim.tbl_deep_extend('force', default_float_win_opts, M.config.floating_win_opts)
+
+      -- override with the following configurations for backwards compatability
+      float_win_opts.border = M.config.border or float_win_opts.border
+      float_win_opts.style = M.config.style or float_win_opts.style
+      return vim.tbl_deep_extend('force', float_win_opts, opts.floating_win_opts or {})
     end,
 
     ['split'] = function()
