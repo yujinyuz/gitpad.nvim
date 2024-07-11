@@ -49,11 +49,11 @@ using [lazy.nvim](https://github.com/folke/lazy.nvim):
       desc = 'gitpad branch',
     },
     {
-      "<leader>pbv",
+      '<leader>pvs',
       function()
-        require("gitpad").toggle_gitpad_branch({ window_type = "split", split_win_opts = { split = "right" } })
+        require('gitpad').toggle_gitpad_branch({ window_type = 'split', split_win_opts = { split = 'right' } })
       end,
-      desc = "gitpad branch vertical split",
+      desc = 'gitpad branch vertical split',
     },
 
     -- Daily notes
