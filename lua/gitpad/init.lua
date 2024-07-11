@@ -182,6 +182,7 @@ function M.open_window(opts)
 
   vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
   vim.api.nvim_set_option_value('buflisted', false, { buf = bufnr })
+  vim.api.nvim_set_option_value('winfixbuf', true, { win = gitpad_win_id })
 
   if win_opts['relative'] then
     vim.api.nvim_set_option_value(
