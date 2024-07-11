@@ -195,7 +195,7 @@ function M.open_window(opts)
   -- But what's kinda annoying is the fact that using is would then
   -- set the `signcolumn` to be `auto` which is not what I want most of the time
   -- So let's just set all minimal options except signcolumn to be no
-  if M.config.style == '' then
+  if M.config.floating_win_opts.style == '' then
     vim.api.nvim_set_option_value('number', false, { win = gitpad_win_id })
     vim.api.nvim_set_option_value('relativenumber', false, { win = gitpad_win_id })
     vim.api.nvim_set_option_value('cursorline', false, { win = gitpad_win_id })
