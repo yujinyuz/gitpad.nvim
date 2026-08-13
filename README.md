@@ -1,3 +1,5 @@
+
+
 # 📝 gitpad.nvim
 
 A minimal neovim plugin for taking down notes for git projects and per branch
@@ -103,8 +105,8 @@ gitpad.nvim comes with the following defaults:
   window_type = 'floating', -- Options are 'floating' or 'split'
   floating_win_opts = {
     relative = 'editor', -- where the floating window should appear. See :help nvim_open_win()
-    style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See :help nvim_open_win() '), and `''` (default Neovim style).
-    border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).
+    style = '', -- The style of the floating window. Possible values are `'minimal'` (no line numbers, statusline, or sign column. See `:help nvim_open_win()`), and `''` (default Neovim style).,
+    border = 'single', -- The border style of the floating window. Possible values are `'single'`, `'double'`, `'shadow'`, `'rounded'`, and `''` (no border).,
     focusable = false, -- Enables focus by user actions. See :help nvim_open_win()
   },
   split_win_opts = {
